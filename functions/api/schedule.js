@@ -6,6 +6,15 @@ const headers = {
 const OFFICIAL_YOUTUBE = 'https://www.youtube.com/@fromis9_official';
 
 const respond = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
+const scheduleDatabaseError = (error) => {
+  console.error('Schedule database request failed', error);
+  const message = error instanceof Error ? error.message : String(error);
+  if (/no such column:\s*ends_at/i.test(message)) {
+    return 'Schedule database migration is required. Apply migrations/0005_schedule_end_dates.sql.';
+  }
+  return 'Schedule data is temporarily unavailable.';
+};
+
 const cleanItem = (item, defaultSource = 'official') => {
   if (!item || typeof item !== 'object') return null;
   const startsAt = Date.parse(item.startsAt);
@@ -49,13 +58,13 @@ async function getManualItems(database) {
 
 async function getSchedule(context) {
   const { env } = context;
-  let items = [];
+  if (!env.LIGHTS_DB) return respond({ error: 'Schedule database is not configured.' }, 503);
   try {
-    items.push(...await getManualItems(env.LIGHTS_DB));
+    const items = await getManualItems(env.LIGHTS_DB);
+    return respond({ items: sortItems(items), updatedAt: new Date().toISOString(), live: false, liveSources: [] });
   } catch (error) {
-    console.warn('Could not load manual schedules', error);
+    return respond({ error: scheduleDatabaseError(error) }, 503);
   }
-  return { items: sortItems(items), updatedAt: new Date().toISOString(), live: false, liveSources: [] };
 }
 
 async function addSchedule(context) {
@@ -69,9 +78,13 @@ async function addSchedule(context) {
   const item = cleanItem({ ...body, source: 'manual' }, 'manual');
   if (!item) return respond({ error: 'Title, future date, and HTTPS URL are required.' }, 400);
   const id = crypto.randomUUID();
-  await env.LIGHTS_DB.prepare(
-    'INSERT INTO schedules (id, title, starts_at, ends_at, url, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, item.title, item.startsAt, item.endsAt, item.url, new Date().toISOString()).run();
+  try {
+    await env.LIGHTS_DB.prepare(
+      'INSERT INTO schedules (id, title, starts_at, ends_at, url, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, item.title, item.startsAt, item.endsAt, item.url, new Date().toISOString()).run();
+  } catch (error) {
+    return respond({ error: scheduleDatabaseError(error) }, 503);
+  }
   return respond({ id, item }, 201);
 }
 
@@ -80,10 +93,14 @@ async function getAdminSchedules(context) {
   if (!isAuthorized(request, env)) return respond({ error: 'Unauthorized' }, 401);
   if (!env.LIGHTS_DB) return respond({ error: 'LIGHTS_DB binding is not configured.' }, 503);
   const now = new Date().toISOString();
-  const result = await env.LIGHTS_DB.prepare(
-    'SELECT id, title, starts_at, ends_at, url FROM schedules WHERE (ends_at IS NULL AND starts_at >= ?) OR ends_at >= ? ORDER BY starts_at ASC LIMIT 50'
-  ).bind(now, now).all();
-  return respond({ items: result.results || [] });
+  try {
+    const result = await env.LIGHTS_DB.prepare(
+      'SELECT id, title, starts_at, ends_at, url FROM schedules WHERE (ends_at IS NULL AND starts_at >= ?) OR ends_at >= ? ORDER BY starts_at ASC LIMIT 50'
+    ).bind(now, now).all();
+    return respond({ items: result.results || [] });
+  } catch (error) {
+    return respond({ error: scheduleDatabaseError(error) }, 503);
+  }
 }
 
 async function deleteSchedule(context) {
@@ -99,7 +116,7 @@ async function deleteSchedule(context) {
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (context.request.method === 'GET' && url.searchParams.has('admin')) return getAdminSchedules(context);
-  if (context.request.method === 'GET') return respond(await getSchedule(context));
+  if (context.request.method === 'GET') return getSchedule(context);
   if (context.request.method === 'POST') return addSchedule(context);
   if (context.request.method === 'DELETE') return deleteSchedule(context);
   return respond({ error: 'Method not allowed.' }, 405);

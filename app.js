@@ -207,7 +207,7 @@
         empty.textContent = 'NO UPCOMING OFFICIAL SCHEDULE';
         scheduleList.append(empty);
       } else {
-        items.slice(0, 2).forEach((item) => scheduleList.append(makeScheduleItem(item)));
+        items.forEach((item) => scheduleList.append(makeScheduleItem(item)));
       }
     };
 
@@ -223,7 +223,10 @@
             cache: 'no-store',
             signal: controller.signal
           });
-          if (!response.ok) throw new Error(`Schedule request failed: ${response.status}`);
+          if (!response.ok) {
+            const error = await response.json().catch(() => null);
+            throw new Error(error?.error || `Schedule request failed: ${response.status}`);
+          }
           const payload = await response.json();
           if (!Array.isArray(payload.items)) throw new Error('Invalid schedule payload');
           renderSchedule(payload.items.filter((item) => item && Number.isFinite(Date.parse(item.startsAt)) && (!item.endsAt || Date.parse(item.endsAt) >= Date.parse(item.startsAt))));
@@ -231,10 +234,11 @@
           scheduleStatus.textContent = payload.live ? `LIVE · ${sources.join(' + ').toUpperCase()}` : 'UPDATED';
           scheduleUpdated.textContent = `UPDATED ${formatKst(payload.updatedAt || Date.now(), scheduleFormatters.time)} KST · 5 MIN`;
           lastScheduleCheck = Date.now();
-        } catch (_) {
+        } catch (error) {
+          console.warn('Could not load schedules', error);
           renderSchedule([]);
-          scheduleStatus.textContent = 'OFFICIAL LINKS';
-          scheduleUpdated.textContent = 'RETRYING OFFICIAL FEEDS';
+          scheduleStatus.textContent = 'SCHEDULE UNAVAILABLE';
+          scheduleUpdated.textContent = 'RETRYING IN 5 MIN';
         } finally {
           window.clearTimeout(timeout);
           scheduleList.setAttribute('aria-busy', 'false');
