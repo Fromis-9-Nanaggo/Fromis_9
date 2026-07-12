@@ -1233,6 +1233,73 @@ p {
   text-align: right;
 }
 
+.track-recommendation {
+  margin-top: 14px;
+  padding: 18px 19px 17px;
+  border: 1px solid rgba(8, 24, 74, .13);
+  border-radius: 2px 18px 2px 18px;
+  color: var(--white);
+  background: var(--ink);
+  box-shadow: 0 16px 34px rgba(8, 24, 74, .12);
+}
+
+.track-recommendation-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--lime);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+
+.track-recommendation-head span:last-child {
+  color: rgba(255, 255, 255, .52);
+}
+
+.track-recommendation p {
+  margin: 13px 0 15px;
+  color: rgba(255, 255, 255, .73);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.track-recommendation p strong {
+  color: var(--white);
+  font-weight: 800;
+}
+
+.track-recommendation a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .16);
+  color: var(--white);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  transition: color .2s ease;
+}
+
+.track-recommendation a i {
+  color: var(--lime);
+  font-size: 15px;
+  font-style: normal;
+  transition: transform .2s var(--ease);
+}
+
+.track-recommendation a:hover,
+.track-recommendation a:focus-visible {
+  color: var(--lime);
+}
+
+.track-recommendation a:hover i,
+.track-recommendation a:focus-visible i {
+  transform: translate(3px, -3px);
+}
+
 .members-section {
   position: relative;
   overflow: hidden;

@@ -306,6 +306,31 @@
   const trackItems = [...document.querySelectorAll('.track-list li')];
   const selectedTrack = document.querySelector('[data-selected-track]');
   const selectedNote = document.querySelector('[data-selected-note]');
+  const trackVideoKind = document.querySelector('[data-track-video-kind]');
+  const trackVideoCopy = document.querySelector('[data-track-video-copy]');
+  const trackVideoLink = document.querySelector('[data-track-video-link]');
+  const trackVideoLabel = document.querySelector('[data-track-video-label]');
+
+  const updateTrackRecommendation = (track, note) => {
+    const query = `fromis_9 ${track} official`;
+    const isTitle = note === 'TITLE TRACK';
+    const isUnit = note === 'UNIT';
+
+    if (trackVideoKind) {
+      trackVideoKind.textContent = isTitle ? 'TITLE VIDEO' : isUnit ? 'UNIT PICK' : 'OFFICIAL SEARCH';
+    }
+    if (trackVideoCopy) {
+      trackVideoCopy.replaceChildren();
+      const title = document.createElement('strong');
+      title.textContent = track;
+      trackVideoCopy.append(title, document.createTextNode(
+        isTitle ? '의 공식 뮤직비디오와 무대를 바로 찾아봐.' : isUnit ? ' 유닛의 공식 콘텐츠와 라이브를 찾아봐.' : '의 공식 영상과 무대를 바로 찾아봐.'
+      ));
+    }
+    if (trackVideoLink) trackVideoLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    if (trackVideoLabel) trackVideoLabel.textContent = `${track.toUpperCase()} 영상 찾기`;
+  };
+
   trackItems.forEach((item) => {
     const button = item.querySelector('button');
     button?.addEventListener('click', () => {
@@ -313,6 +338,7 @@
       item.classList.add('active');
       if (selectedTrack) selectedTrack.textContent = button.dataset.track;
       if (selectedNote) selectedNote.textContent = button.dataset.note;
+      updateTrackRecommendation(button.dataset.track || '', button.dataset.note || '');
       button.animate?.([
         { transform: 'translateX(-5px)' },
         { transform: 'translateX(0)' }
