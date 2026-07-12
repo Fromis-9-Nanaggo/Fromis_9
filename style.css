@@ -701,24 +701,9 @@ p {
 }
 
 .schedule-foot {
-  gap: 9px;
   padding-top: 10px;
   color: rgba(255, 255, 255, .52);
   font-size: 9px;
-}
-
-.schedule-foot > span {
-  margin-right: auto;
-}
-
-.schedule-foot a {
-  color: #fff;
-  transition: color .2s var(--ease);
-}
-
-.schedule-foot a:hover,
-.schedule-foot a:focus-visible {
-  color: var(--lime);
 }
 
 .scroll-hint {

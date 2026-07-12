@@ -177,7 +177,7 @@
       const copy = document.createElement('span');
       copy.className = 'schedule-copy';
       const meta = document.createElement('small');
-      meta.textContent = `${formatKst(start, scheduleFormatters.time)} KST · ${(item.source || 'OFFICIAL').toUpperCase()}`;
+      meta.textContent = `${formatKst(start, scheduleFormatters.time)} KST`;
       const title = document.createElement('strong');
       title.textContent = item.title || 'OFFICIAL UPDATE';
       copy.append(meta, title);
@@ -218,7 +218,7 @@
           if (!Array.isArray(payload.items)) throw new Error('Invalid schedule payload');
           renderSchedule(payload.items.filter((item) => item && Number.isFinite(Date.parse(item.startsAt))));
           const sources = Array.isArray(payload.liveSources) ? payload.liveSources : [];
-          scheduleStatus.textContent = payload.live ? `LIVE · ${sources.join(' + ').toUpperCase()}` : 'MANUAL UPDATE';
+          scheduleStatus.textContent = payload.live ? `LIVE · ${sources.join(' + ').toUpperCase()}` : 'UPDATED';
           scheduleUpdated.textContent = `UPDATED ${formatKst(payload.updatedAt || Date.now(), scheduleFormatters.time)} KST · 5 MIN`;
           lastScheduleCheck = Date.now();
         } catch (_) {
