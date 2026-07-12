@@ -134,6 +134,113 @@
     countdownTimer = window.setInterval(updateCountdown, 1000);
   }
 
+  const scheduleList = document.querySelector('[data-schedule-list]');
+  const scheduleStatus = document.querySelector('[data-schedule-status]');
+  const scheduleUpdated = document.querySelector('[data-schedule-updated]');
+  if (scheduleList && scheduleStatus && scheduleUpdated) {
+    const scheduleEndpoint = '/api/schedule';
+    let lastScheduleCheck = 0;
+    let scheduleRequest = null;
+
+    const scheduleFormatters = {
+      day: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', day: '2-digit' }),
+      month: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', month: 'short' }),
+      time: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false })
+    };
+    const formatKst = (value, formatter) => formatter.format(new Date(value));
+
+    const safeUrl = (value) => {
+      try {
+        const url = new URL(value);
+        return ['https:', 'http:'].includes(url.protocol) ? url.href : 'https://www.youtube.com/@fromis9_official';
+      } catch (_) {
+        return 'https://www.youtube.com/@fromis9_official';
+      }
+    };
+
+    const makeScheduleItem = (item) => {
+      const start = new Date(item.startsAt);
+      const link = document.createElement('a');
+      link.className = 'schedule-item';
+      link.href = safeUrl(item.url);
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+
+      const date = document.createElement('time');
+      date.dateTime = start.toISOString();
+      const day = document.createElement('b');
+      day.textContent = formatKst(start, scheduleFormatters.day);
+      const month = document.createElement('span');
+      month.textContent = formatKst(start, scheduleFormatters.month).toUpperCase();
+      date.append(day, month);
+
+      const copy = document.createElement('span');
+      copy.className = 'schedule-copy';
+      const meta = document.createElement('small');
+      meta.textContent = `${formatKst(start, scheduleFormatters.time)} KST · ${(item.source || 'OFFICIAL').toUpperCase()}`;
+      const title = document.createElement('strong');
+      title.textContent = item.title || 'OFFICIAL UPDATE';
+      copy.append(meta, title);
+
+      const arrow = document.createElement('i');
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = '↗';
+      link.append(date, copy, arrow);
+      return link;
+    };
+
+    const renderSchedule = (items) => {
+      scheduleList.replaceChildren();
+      if (!items.length) {
+        const empty = document.createElement('p');
+        empty.className = 'schedule-empty';
+        empty.textContent = 'NO UPCOMING OFFICIAL SCHEDULE';
+        scheduleList.append(empty);
+      } else {
+        items.slice(0, 2).forEach((item) => scheduleList.append(makeScheduleItem(item)));
+      }
+    };
+
+    const loadSchedule = () => {
+      if (scheduleRequest) return scheduleRequest;
+      scheduleRequest = (async () => {
+        scheduleList.setAttribute('aria-busy', 'true');
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(scheduleEndpoint, {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal
+          });
+          if (!response.ok) throw new Error(`Schedule request failed: ${response.status}`);
+          const payload = await response.json();
+          if (!Array.isArray(payload.items)) throw new Error('Invalid schedule payload');
+          renderSchedule(payload.items.filter((item) => item && Number.isFinite(Date.parse(item.startsAt))));
+          const sources = Array.isArray(payload.liveSources) ? payload.liveSources : [];
+          scheduleStatus.textContent = payload.live ? `LIVE · ${sources.join(' + ').toUpperCase()}` : 'MANUAL UPDATE';
+          scheduleUpdated.textContent = `UPDATED ${formatKst(payload.updatedAt || Date.now(), scheduleFormatters.time)} KST · 5 MIN`;
+          lastScheduleCheck = Date.now();
+        } catch (_) {
+          renderSchedule([]);
+          scheduleStatus.textContent = 'OFFICIAL LINKS';
+          scheduleUpdated.textContent = 'RETRYING OFFICIAL FEEDS';
+        } finally {
+          window.clearTimeout(timeout);
+          scheduleList.setAttribute('aria-busy', 'false');
+          scheduleRequest = null;
+        }
+      })();
+      return scheduleRequest;
+    };
+
+    loadSchedule();
+    window.setInterval(loadSchedule, 300000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastScheduleCheck > 300000) loadSchedule();
+    });
+  }
+
   const trackItems = [...document.querySelectorAll('.track-list li')];
   const selectedTrack = document.querySelector('[data-selected-track]');
   const selectedNote = document.querySelector('[data-selected-note]');

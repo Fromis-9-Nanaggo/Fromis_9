@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061122">
+  <title>일정 관리 | GLOW WITH 9</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="schedule-admin-page">
+  <main class="schedule-admin-main">
+    <a class="admin-back" href="/">← 메인으로</a>
+    <p class="admin-eyebrow">GLOW WITH 9 · ADMIN</p>
+    <h1>일정 등록</h1>
+    <p class="admin-lead">날짜, 제목, 공식 URL만 넣고 등록하면 메인 일정에 자동 반영돼.</p>
+
+    <form class="admin-form" data-schedule-form>
+      <label>
+        관리자 토큰
+        <input type="password" name="token" autocomplete="current-password" required placeholder="Cloudflare에 등록한 SCHEDULE_ADMIN_TOKEN">
+      </label>
+      <label>
+        날짜와 시간 (KST)
+        <input type="datetime-local" name="startsAt" required>
+      </label>
+      <label>
+        제목
+        <input type="text" name="title" maxlength="120" required placeholder="예: M COUNTDOWN 출연">
+      </label>
+      <label>
+        공식 URL
+        <input type="url" name="url" required placeholder="https://www.youtube.com/watch?v=...">
+      </label>
+      <button type="submit">일정 등록</button>
+      <p class="admin-message" data-admin-message aria-live="polite"></p>
+    </form>
+
+    <section class="admin-list-wrap" aria-labelledby="admin-list-title">
+      <div><p class="admin-eyebrow">SAVED ITEMS</p><h2 id="admin-list-title">등록된 일정</h2></div>
+      <button class="admin-refresh" type="button" data-admin-refresh>새로고침</button>
+      <div class="admin-list" data-admin-list><p>토큰을 입력한 뒤 새로고침을 눌러.</p></div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const form = document.querySelector('[data-schedule-form]');
+      const list = document.querySelector('[data-admin-list]');
+      const message = document.querySelector('[data-admin-message]');
+      const refresh = document.querySelector('[data-admin-refresh]');
+      const tokenInput = form.elements.token;
+      const setMessage = (text, isError = false) => {
+        message.textContent = text;
+        message.classList.toggle('is-error', isError);
+      };
+      const headers = () => ({ Authorization: `Bearer ${tokenInput.value.trim()}`, Accept: 'application/json' });
+      const formatDate = (value) => new Intl.DateTimeFormat('ko-KR', {
+        dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Seoul'
+      }).format(new Date(value));
+      const loadSchedules = async () => {
+        if (!tokenInput.value.trim()) return setMessage('관리자 토큰을 입력해.', true);
+        list.replaceChildren();
+        try {
+          const response = await fetch('/api/schedule?admin=1', { headers: headers(), cache: 'no-store' });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || '목록을 불러오지 못했어.');
+          if (!data.items.length) {
+            list.textContent = '등록된 앞으로의 일정이 없어.';
+            return;
+          }
+          data.items.forEach((item) => {
+            const row = document.createElement('article');
+            row.className = 'admin-schedule-row';
+            const copy = document.createElement('div');
+            const time = document.createElement('time');
+            time.textContent = formatDate(item.starts_at);
+            const title = document.createElement('strong');
+            title.textContent = item.title;
+            const link = document.createElement('a');
+            link.href = item.url;
+            link.target = '_blank';
+            link.rel = 'noreferrer';
+            link.textContent = '공식 링크 열기 ↗';
+            copy.append(time, title, link);
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = '삭제';
+            remove.addEventListener('click', async () => {
+              if (!confirm(`“${item.title}” 일정을 삭제할까?`)) return;
+              const response = await fetch(`/api/schedule?id=${encodeURIComponent(item.id)}`, { method: 'DELETE', headers: headers() });
+              if (!response.ok) return setMessage('삭제하지 못했어. 토큰을 확인해.', true);
+              setMessage('삭제했어.');
+              loadSchedules();
+            });
+            row.append(copy, remove);
+            list.append(row);
+          });
+        } catch (error) {
+          setMessage(error.message, true);
+          list.textContent = '목록을 불러오지 못했어.';
+        }
+      };
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const startsAt = `${data.get('startsAt')}:00+09:00`;
+        setMessage('등록 중...');
+        try {
+          const response = await fetch('/api/schedule', {
+            method: 'POST',
+            headers: { ...headers(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: data.get('title'), startsAt, url: data.get('url') })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || '등록하지 못했어.');
+          form.elements.startsAt.value = '';
+          form.elements.title.value = '';
+          form.elements.url.value = '';
+          setMessage('등록 완료. 메인 일정에도 바로 반영돼.');
+          loadSchedules();
+        } catch (error) {
+          setMessage(error.message, true);
+        }
+      });
+      refresh.addEventListener('click', loadSchedules);
+    })();
+  </script>
+</body>
+</html>
