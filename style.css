@@ -2606,9 +2606,9 @@ p {
 .admin-message { min-height: 20px; color: var(--lime); font-size: 13px; font-weight: 700; }
 .admin-message.is-error { color: #ff9a79; }
 .admin-list-wrap { margin-top: 72px; }
-.admin-list-wrap > div:first-child { display: flex; align-items: end; justify-content: space-between; }
+.admin-list-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
 .admin-list-wrap h2 { font-family: var(--display); font-size: clamp(32px, 5vw, 50px); letter-spacing: -.06em; }
-.admin-refresh { float: right; margin-top: -44px; }
+.admin-refresh { flex: 0 0 auto; margin: 0; }
 .admin-list { display: grid; gap: 1px; margin-top: 24px; background: rgba(255, 255, 255, .18); }
 .admin-list > p { padding: 24px; color: rgba(255, 255, 255, .62); background: var(--ink); }
 .admin-schedule-row { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 20px; background: var(--ink); }
