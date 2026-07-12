@@ -1691,9 +1691,11 @@ p {
 .light-counter {
   display: flex;
   align-items: flex-end;
-  gap: 14px;
+  gap: 34px;
   margin-top: 34px;
 }
+
+.light-counter > div { display: grid; gap: 8px; }
 
 .light-counter strong {
   color: var(--lime);
@@ -1705,11 +1707,11 @@ p {
 }
 
 .light-counter span {
+  display: block;
   font-size: 7px;
   font-weight: 800;
   line-height: 1.45;
   letter-spacing: .11em;
-  text-align: left;
   opacity: .5;
 }
 

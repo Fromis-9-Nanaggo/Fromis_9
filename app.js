@@ -258,6 +258,7 @@
   const canvasWrap = document.querySelector('.flover-canvas-wrap');
   const plantButton = document.querySelector('[data-plant]');
   const lightCount = document.querySelector('[data-light-count]');
+  const todayLightCount = document.querySelector('[data-today-light-count]');
 
   if (canvas && canvasWrap) {
     const context = canvas.getContext('2d');
@@ -270,6 +271,7 @@
     let stars = [];
     let blooms = [];
     let count = 0;
+    let todayCount = 0;
     let serverCount = null;
     let frame = 0;
 
@@ -281,6 +283,7 @@
 
     const updateCount = () => {
       if (lightCount) lightCount.textContent = String(count).padStart(3, '0');
+      if (todayLightCount) todayLightCount.textContent = String(todayCount).padStart(3, '0');
     };
     updateCount();
 
@@ -293,6 +296,7 @@
         if (!Number.isFinite(globalCount)) throw new Error('Invalid shared light count.');
         serverCount = globalCount;
         count = globalCount;
+        todayCount = Number.parseInt(data.today, 10) || 0;
         updateCount();
       } catch (_) {
         // D1 바인딩 전에는 기존 기기별 카운트를 안전한 대체값으로 사용한다.
@@ -311,6 +315,7 @@
         if (Number.isFinite(globalCount)) {
           serverCount = Math.max(serverCount || 0, globalCount);
           count = serverCount;
+          todayCount = Number.parseInt(data.today, 10) || 0;
           updateCount();
           window.localStorage.setItem(storageKey, String(count));
         }
@@ -433,6 +438,7 @@
         });
       }
       count += 1;
+      todayCount += 1;
       try {
         window.localStorage.setItem(storageKey, String(count));
       } catch (_) {

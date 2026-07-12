@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS daily_lights (
+  day TEXT PRIMARY KEY,
+  count INTEGER NOT NULL DEFAULT 0 CHECK (count >= 0)
+);

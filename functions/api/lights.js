@@ -5,6 +5,17 @@ const headers = {
 
 const respond = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
+async function getCounts(database) {
+  const [total, today] = await Promise.all([
+    database.prepare('SELECT count FROM lights WHERE id = 1').first(),
+    database.prepare("SELECT count FROM daily_lights WHERE day = date('now', '+9 hours')").first()
+  ]);
+  return {
+    count: Number(total?.count || 0),
+    today: Number(today?.count || 0)
+  };
+}
+
 export async function onRequest(context) {
   const database = context.env.LIGHTS_DB;
   if (!database) {
@@ -12,15 +23,15 @@ export async function onRequest(context) {
   }
 
   if (context.request.method === 'GET') {
-    const row = await database.prepare('SELECT count FROM lights WHERE id = 1').first();
-    return respond({ count: Number(row?.count || 0) });
+    return respond(await getCounts(database));
   }
 
   if (context.request.method === 'POST') {
-    const row = await database
-      .prepare('INSERT INTO lights (id, count) VALUES (1, 1) ON CONFLICT(id) DO UPDATE SET count = lights.count + 1 RETURNING count')
-      .first();
-    return respond({ count: Number(row?.count || 0) });
+    await database.batch([
+      database.prepare('INSERT INTO lights (id, count) VALUES (1, 1) ON CONFLICT(id) DO UPDATE SET count = lights.count + 1'),
+      database.prepare("INSERT INTO daily_lights (day, count) VALUES (date('now', '+9 hours'), 1) ON CONFLICT(day) DO UPDATE SET count = daily_lights.count + 1")
+    ]);
+    return respond(await getCounts(database));
   }
 
   return respond({ error: 'Method not allowed.' }, 405);
