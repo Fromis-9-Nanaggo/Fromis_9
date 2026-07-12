@@ -2262,8 +2262,10 @@ p {
   .member-deck {
     margin-right: calc(var(--page) * -1);
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
+    touch-action: pan-y;
   }
 
   .member-card {

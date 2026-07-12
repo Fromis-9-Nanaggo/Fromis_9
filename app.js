@@ -273,6 +273,63 @@
     });
   });
 
+  const memberDeck = document.querySelector('.member-deck');
+  if (memberDeck && window.matchMedia('(pointer: coarse)').matches) {
+    const dragThreshold = 10;
+    let trackingMemberSwipe = false;
+    let horizontalMemberSwipe = false;
+    let suppressMemberClick = false;
+    let startMemberX = 0;
+    let startMemberY = 0;
+    let startMemberScroll = 0;
+
+    const finishMemberSwipe = (event) => {
+      if (event.pointerType !== 'touch') return;
+      const didSwipeHorizontally = horizontalMemberSwipe;
+      if (horizontalMemberSwipe && memberDeck.hasPointerCapture(event.pointerId)) {
+        memberDeck.releasePointerCapture(event.pointerId);
+      }
+      trackingMemberSwipe = false;
+      horizontalMemberSwipe = false;
+      if (didSwipeHorizontally) window.setTimeout(() => { suppressMemberClick = false; }, 350);
+    };
+
+    memberDeck.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'touch') return;
+      trackingMemberSwipe = true;
+      horizontalMemberSwipe = false;
+      suppressMemberClick = false;
+      startMemberX = event.clientX;
+      startMemberY = event.clientY;
+      startMemberScroll = memberDeck.scrollLeft;
+    });
+    memberDeck.addEventListener('pointermove', (event) => {
+      if (!trackingMemberSwipe || event.pointerType !== 'touch') return;
+      const moveX = event.clientX - startMemberX;
+      const moveY = event.clientY - startMemberY;
+      if (!horizontalMemberSwipe) {
+        if (Math.max(Math.abs(moveX), Math.abs(moveY)) < dragThreshold) return;
+        if (Math.abs(moveY) >= Math.abs(moveX)) {
+          trackingMemberSwipe = false;
+          return;
+        }
+        horizontalMemberSwipe = true;
+        suppressMemberClick = true;
+        memberDeck.setPointerCapture(event.pointerId);
+      }
+      event.preventDefault();
+      memberDeck.scrollLeft = startMemberScroll - moveX;
+    }, { passive: false });
+    memberDeck.addEventListener('pointerup', finishMemberSwipe);
+    memberDeck.addEventListener('pointercancel', finishMemberSwipe);
+    memberDeck.addEventListener('click', (event) => {
+      if (!suppressMemberClick) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressMemberClick = false;
+    }, true);
+  }
+
   const archiveControls = document.querySelector('.archive-controls');
   const archiveScroller = document.querySelector('.era-scroller');
   if (archiveControls && archiveScroller) archiveScroller.before(archiveControls);
