@@ -151,7 +151,45 @@
     });
   });
 
-  const eraScroller = document.querySelector('.era-scroller');
+  const archiveControls = document.querySelector('.archive-controls');
+  const archiveScroller = document.querySelector('.era-scroller');
+  if (archiveControls && archiveScroller) archiveScroller.before(archiveControls);
+  const archiveSearch = document.querySelector('[data-archive-search]');
+  const archiveYear = document.querySelector('[data-archive-year]');
+  const archiveTypeButtons = [...document.querySelectorAll('[data-archive-type]')];
+  const archiveResult = document.querySelector('[data-archive-result]');
+  const eraCards = [...document.querySelectorAll('.era-card[data-era-year]')];
+  let activeArchiveType = 'all';
+
+  const filterArchive = () => {
+    const keyword = (archiveSearch?.value || '').trim().toLowerCase();
+    const year = archiveYear?.value || 'all';
+    let matched = 0;
+    eraCards.forEach((card) => {
+      const matches = (year === 'all' || card.dataset.eraYear === year)
+        && (activeArchiveType === 'all' || card.dataset.eraType === activeArchiveType)
+        && (!keyword || card.dataset.eraSearch?.includes(keyword));
+      card.hidden = !matches;
+      if (matches) matched += 1;
+    });
+    if (archiveResult) archiveResult.textContent = `${matched}개의 기록`;
+  };
+
+  archiveSearch?.addEventListener('input', filterArchive);
+  archiveYear?.addEventListener('change', filterArchive);
+  archiveTypeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      activeArchiveType = button.dataset.archiveType || 'all';
+      archiveTypeButtons.forEach((item) => {
+        const selected = item === button;
+        item.classList.toggle('is-active', selected);
+        item.setAttribute('aria-pressed', String(selected));
+      });
+      filterArchive();
+    });
+  });
+
+  const eraScroller = archiveScroller;
   if (eraScroller) {
     let dragging = false;
     let startX = 0;
@@ -225,12 +263,14 @@
     const context = canvas.getContext('2d');
     const colors = ['#c8ff2f', '#6fe9ff', '#b49bff', '#ffcb70', '#ffffff'];
     const storageKey = 'glow-with-9-lights';
+    const lightsEndpoint = '/api/lights';
     let width = 0;
     let height = 0;
     let ratio = 1;
     let stars = [];
     let blooms = [];
     let count = 0;
+    let serverCount = null;
     let frame = 0;
 
     try {
@@ -243,6 +283,43 @@
       if (lightCount) lightCount.textContent = String(count).padStart(3, '0');
     };
     updateCount();
+
+    const readGlobalCount = async () => {
+      try {
+        const response = await fetch(lightsEndpoint, { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('Unable to read the shared light count.');
+        const data = await response.json();
+        const globalCount = Number.parseInt(data.count, 10);
+        if (!Number.isFinite(globalCount)) throw new Error('Invalid shared light count.');
+        serverCount = globalCount;
+        count = globalCount;
+        updateCount();
+      } catch (_) {
+        // D1 바인딩 전에는 기존 기기별 카운트를 안전한 대체값으로 사용한다.
+      }
+    };
+
+    const plantGlobalLight = async () => {
+      try {
+        const response = await fetch(lightsEndpoint, {
+          method: 'POST',
+          headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error('Unable to plant the shared light.');
+        const data = await response.json();
+        const globalCount = Number.parseInt(data.count, 10);
+        if (Number.isFinite(globalCount)) {
+          serverCount = Math.max(serverCount || 0, globalCount);
+          count = serverCount;
+          updateCount();
+          window.localStorage.setItem(storageKey, String(count));
+        }
+      } catch (_) {
+        // 네트워크 오류면 기존 로컬 카운트를 유지한다.
+      }
+    };
+
+    readGlobalCount();
 
     const makeStars = () => {
       const total = Math.round(clamp((width * height) / 13000, 45, 135));
@@ -362,6 +439,7 @@
         // 저장을 막은 브라우저에서도 인터랙션 자체는 계속 동작해.
       }
       updateCount();
+      plantGlobalLight();
       if (reducedMotion) draw();
     };
 

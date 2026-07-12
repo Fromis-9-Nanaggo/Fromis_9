@@ -232,35 +232,64 @@
         </div>
 
         <div class="era-scroller" tabindex="0" aria-label="주요 한국 디스코그래피 타임라인. 가로로 스크롤할 수 있어.">
-          <article class="era-card era-2017">
+          <div class="archive-controls reveal" aria-label="아카이브 필터">
+            <label class="archive-search">
+              <span class="sr-only">활동 검색</span>
+              <input type="search" data-archive-search placeholder="활동명 또는 앨범명 검색" autocomplete="off">
+              <i aria-hidden="true">⌕</i>
+            </label>
+            <label class="archive-select">
+              <span class="sr-only">연도 선택</span>
+              <select data-archive-year>
+                <option value="all">모든 연도</option>
+                <option value="2017">2017</option>
+                <option value="2018">2018</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+            </label>
+            <div class="archive-types" role="group" aria-label="활동 종류">
+              <button class="is-active" type="button" data-archive-type="all" aria-pressed="true">ALL</button>
+              <button type="button" data-archive-type="single" aria-pressed="false">SINGLE</button>
+              <button type="button" data-archive-type="mini" aria-pressed="false">MINI</button>
+              <button type="button" data-archive-type="album" aria-pressed="false">ALBUM</button>
+            </div>
+            <p class="archive-result" data-archive-result aria-live="polite">8개의 기록</p>
+          </div>
+
+          <article class="era-card era-2017" data-era-year="2017" data-era-type="single" data-era-search="glass shoes pre-debut single">
             <div class="era-art"><span>01</span><i>◇</i></div>
             <div class="era-copy"><span>2017</span><h3>Glass Shoes</h3><p>PRE-DEBUT SINGLE</p></div>
           </article>
-          <article class="era-card era-2018">
+          <article class="era-card era-2018" data-era-year="2018" data-era-type="mini" data-era-search="to. heart 1st mini album">
             <div class="era-art"><span>02</span><i>♡</i></div>
             <div class="era-copy"><span>2018</span><h3>To. Heart</h3><p>1ST MINI ALBUM</p></div>
           </article>
-          <article class="era-card era-2021">
+          <article class="era-card era-2021" data-era-year="2021" data-era-type="single" data-era-search="we go 9 way ticket single album">
             <div class="era-art"><span>03</span><i>↗</i></div>
             <div class="era-copy"><span>2021</span><h3>WE GO</h3><p>9 WAY TICKET</p></div>
           </article>
-          <article class="era-card era-2022">
+          <article class="era-card era-2022" data-era-year="2022" data-era-type="mini" data-era-search="dm midnight guest mini album">
             <div class="era-art"><span>04</span><i>☾</i></div>
             <div class="era-copy"><span>2022</span><h3>DM</h3><p>MIDNIGHT GUEST</p></div>
           </article>
-          <article class="era-card era-2023">
+          <article class="era-card era-2023" data-era-year="2023" data-era-type="album" data-era-search="#menow unlock my world studio album">
             <div class="era-art"><span>05</span><i>#</i></div>
             <div class="era-copy"><span>2023</span><h3>#menow</h3><p>UNLOCK MY WORLD</p></div>
           </article>
-          <article class="era-card era-2024">
+          <article class="era-card era-2024" data-era-year="2024" data-era-type="single" data-era-search="supersonic 3rd single album">
             <div class="era-art"><span>06</span><i>⚡</i></div>
             <div class="era-copy"><span>2024</span><h3>Supersonic</h3><p>3RD SINGLE ALBUM</p></div>
           </article>
-          <article class="era-card era-2025">
+          <article class="era-card era-2025" data-era-year="2025" data-era-type="single" data-era-search="like you better from our 20's single album">
             <div class="era-art"><span>07</span><i>☀</i></div>
             <div class="era-copy"><span>2025</span><h3>LIKE YOU BETTER</h3><p>FROM OUR 20'S</p></div>
           </article>
-          <article class="era-card era-2026">
+          <article class="era-card era-2026" data-era-year="2026" data-era-type="album" data-era-search="glow me the 2nd album">
             <div class="era-art"><span>08</span><i>✣</i></div>
             <div class="era-copy"><span>2026</span><h3>Glow ME</h3><p>THE 2ND ALBUM</p></div>
           </article>
@@ -299,7 +328,7 @@
           </button>
           <div class="light-counter reveal">
             <strong data-light-count>000</strong>
-            <span>LIGHTS PLANTED</span>
+            <span>LIGHTS PLANTED · EVERYONE</span>
           </div>
         </div>
         <p class="tap-hint" aria-hidden="true">TAP ANYWHERE ✣</p>
