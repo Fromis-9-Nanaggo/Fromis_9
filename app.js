@@ -2,6 +2,7 @@
   'use strict';
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
   const pad = (value) => String(value).padStart(2, '0');
 
@@ -351,9 +352,18 @@
 
   const pointerGlow = document.querySelector('.pointer-glow');
   if (pointerGlow && window.matchMedia('(pointer: fine)').matches) {
+    let pointerFrame = null;
+    let pointerX = 0;
+    let pointerY = 0;
+    const renderPointerGlow = () => {
+      pointerGlow.style.left = `${pointerX}px`;
+      pointerGlow.style.top = `${pointerY}px`;
+      pointerFrame = null;
+    };
     window.addEventListener('pointermove', (event) => {
-      pointerGlow.style.left = `${event.clientX}px`;
-      pointerGlow.style.top = `${event.clientY}px`;
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (pointerFrame === null) pointerFrame = window.requestAnimationFrame(renderPointerGlow);
     }, { passive: true });
   }
 
@@ -395,6 +405,9 @@
     let todayCount = 0;
     let serverCount = null;
     let frame = 0;
+    let animationFrame = null;
+    let resizeFrame = null;
+    let canvasVisible = false;
 
     try {
       count = Number.parseInt(window.localStorage.getItem(storageKey) || '0', 10) || 0;
@@ -448,7 +461,7 @@
     readGlobalCount();
 
     const makeStars = () => {
-      const total = Math.round(clamp((width * height) / 13000, 45, 135));
+      const total = Math.round(clamp((width * height) / (coarsePointer ? 22000 : 13000), coarsePointer ? 28 : 45, coarsePointer ? 72 : 135));
       stars = Array.from({ length: total }, (_, index) => ({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -458,7 +471,7 @@
         speed: Math.random() * .012 + .004,
         color: colors[index % colors.length]
       }));
-      const remembered = Math.min(count, 18);
+      const remembered = Math.min(count, coarsePointer ? 12 : 18);
       for (let i = 0; i < remembered; i += 1) {
         blooms.push({
           x: width * (.08 + Math.random() * .84),
@@ -476,7 +489,7 @@
       const rect = canvasWrap.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
-      ratio = clamp(window.devicePixelRatio || 1, 1, 2);
+      ratio = clamp(window.devicePixelRatio || 1, 1, coarsePointer ? 1 : 1.5);
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       canvas.style.width = `${width}px`;
@@ -533,8 +546,27 @@
         if (!bloom.permanent) bloom.age += .018;
       });
       frame += 1;
-      if (!reducedMotion) window.requestAnimationFrame(draw);
     }
+
+    const shouldAnimate = () => !reducedMotion && canvasVisible && document.visibilityState === 'visible';
+    const stopAnimation = () => {
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    };
+    const animate = () => {
+      draw();
+      animationFrame = shouldAnimate() ? window.requestAnimationFrame(animate) : null;
+    };
+    const startAnimation = () => {
+      if (animationFrame === null && shouldAnimate()) animationFrame = window.requestAnimationFrame(animate);
+    };
+    const queueResize = () => {
+      if (resizeFrame !== null) return;
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = null;
+        resizeCanvas();
+      });
+    };
 
     const plant = (x, y) => {
       const baseColor = colors[count % colors.length];
@@ -580,9 +612,27 @@
       plant(width * (.28 + Math.random() * .44), height * (.24 + Math.random() * .5));
     });
 
-    if ('ResizeObserver' in window) new ResizeObserver(resizeCanvas).observe(canvasWrap);
-    else window.addEventListener('resize', resizeCanvas);
+    if ('ResizeObserver' in window) new ResizeObserver(queueResize).observe(canvasWrap);
+    else window.addEventListener('resize', queueResize, { passive: true });
     resizeCanvas();
-    if (!reducedMotion) draw();
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => {
+        canvasVisible = entries.some((entry) => entry.isIntersecting);
+        if (canvasVisible) {
+          if (reducedMotion) draw();
+          else startAnimation();
+        } else {
+          stopAnimation();
+        }
+      }, { rootMargin: '160px 0px' }).observe(canvasWrap);
+    } else {
+      canvasVisible = true;
+      if (reducedMotion) draw();
+      else startAnimation();
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') startAnimation();
+      else stopAnimation();
+    });
   }
 })();
