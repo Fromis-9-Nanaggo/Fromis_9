@@ -256,6 +256,53 @@
     });
   }
 
+  const latestVideoCard = document.querySelector('[data-latest-video]');
+  const latestVideoFrame = document.querySelector('[data-latest-video-frame]');
+  const latestVideoTitle = document.querySelector('[data-latest-video-title]');
+  const latestVideoLink = document.querySelector('[data-latest-video-link]');
+  const latestVideoFallback = document.querySelector('[data-latest-video-fallback]');
+  const desktopVideoQuery = window.matchMedia('(min-width: 821px) and (pointer: fine)');
+  let latestVideoRequested = false;
+
+  const loadLatestVideo = async () => {
+    if (!latestVideoCard || latestVideoRequested || !desktopVideoQuery.matches) return;
+    latestVideoRequested = true;
+    try {
+      const response = await fetch('/api/latest-video', {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`Latest video request failed: ${response.status}`);
+      const video = await response.json();
+      if (!/^[\w-]{11}$/.test(video.id || '')) throw new Error('Invalid latest video payload');
+
+      const watchUrl = `https://www.youtube.com/watch?v=${video.id}`;
+      if (latestVideoLink) latestVideoLink.href = watchUrl;
+      if (latestVideoTitle) latestVideoTitle.textContent = video.title || 'LATEST VIDEO FROM THE OFFICIAL CHANNEL.';
+      if (latestVideoFallback) latestVideoFallback.textContent = video.title || 'WATCH ON YOUTUBE';
+      if (latestVideoFrame) {
+        latestVideoFrame.addEventListener('load', () => latestVideoCard.classList.add('is-ready'), { once: true });
+        latestVideoFrame.src = `https://www.youtube-nocookie.com/embed/${video.id}?rel=0&modestbranding=1`;
+      } else {
+        latestVideoCard.classList.add('is-ready');
+      }
+    } catch (error) {
+      console.warn('Could not load the latest YouTube video', error);
+      if (latestVideoTitle) latestVideoTitle.textContent = 'OPEN THE OFFICIAL CHANNEL FOR THE LATEST VIDEO.';
+      if (latestVideoFallback) latestVideoFallback.textContent = 'OPEN OFFICIAL CHANNEL';
+      latestVideoCard.classList.add('is-unavailable');
+    } finally {
+      latestVideoCard.setAttribute('aria-busy', 'false');
+    }
+  };
+
+  if (latestVideoCard) {
+    loadLatestVideo();
+    desktopVideoQuery.addEventListener?.('change', (event) => {
+      if (event.matches) loadLatestVideo();
+    });
+  }
+
   const trackItems = [...document.querySelectorAll('.track-list li')];
   const selectedTrack = document.querySelector('[data-selected-track]');
   const selectedNote = document.querySelector('[data-selected-note]');
