@@ -659,6 +659,21 @@ p {
   letter-spacing: -.06em;
 }
 
+.schedule-item time.is-range {
+  flex-basis: 54px;
+}
+
+.schedule-item time.is-range b {
+  font-family: var(--body);
+  font-size: 14px;
+  letter-spacing: -.08em;
+}
+
+.schedule-item time.is-range span {
+  font-size: 8px;
+  white-space: nowrap;
+}
+
 .schedule-item time span {
   margin-top: 3px;
   font-size: 9px;

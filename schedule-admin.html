@@ -24,6 +24,10 @@
         <input type="datetime-local" name="startsAt" required>
       </label>
       <label>
+        종료 날짜와 시간 (KST, 선택)
+        <input type="datetime-local" name="endsAt">
+      </label>
+      <label>
         제목
         <input type="text" name="title" maxlength="120" required placeholder="예: M COUNTDOWN 출연">
       </label>
@@ -59,6 +63,9 @@
       const formatDate = (value) => new Intl.DateTimeFormat('ko-KR', {
         dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Seoul'
       }).format(new Date(value));
+      const formatScheduleDate = (item) => item.ends_at
+        ? `${formatDate(item.starts_at)} ~ ${formatDate(item.ends_at)}`
+        : formatDate(item.starts_at);
       const loadSchedules = async () => {
         if (!tokenInput.value.trim()) return setMessage('관리자 토큰을 입력해.', true);
         list.replaceChildren();
@@ -75,7 +82,7 @@
             row.className = 'admin-schedule-row';
             const copy = document.createElement('div');
             const time = document.createElement('time');
-            time.textContent = formatDate(item.starts_at);
+            time.textContent = formatScheduleDate(item);
             const title = document.createElement('strong');
             title.textContent = item.title;
             const link = document.createElement('a');
@@ -105,17 +112,20 @@
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const data = new FormData(form);
-        const startsAt = `${data.get('startsAt')}:00+09:00`;
+        const toKstIso = (value) => value ? `${value}:00+09:00` : null;
+        const startsAt = toKstIso(data.get('startsAt'));
+        const endsAt = toKstIso(data.get('endsAt'));
         setMessage('등록 중...');
         try {
           const response = await fetch('/api/schedule', {
             method: 'POST',
             headers: { ...headers(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: data.get('title'), startsAt, url: data.get('url') })
+            body: JSON.stringify({ title: data.get('title'), startsAt, endsAt, url: data.get('url') })
           });
           const result = await response.json();
           if (!response.ok) throw new Error(result.error || '등록하지 못했어.');
           form.elements.startsAt.value = '';
+          form.elements.endsAt.value = '';
           form.elements.title.value = '';
           form.elements.url.value = '';
           setMessage('등록 완료. 메인 일정에도 바로 반영돼.');

@@ -145,6 +145,7 @@
     const scheduleFormatters = {
       day: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', day: '2-digit' }),
       month: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', month: 'short' }),
+      date: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }),
       time: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false })
     };
     const formatKst = (value, formatter) => formatter.format(new Date(value));
@@ -160,6 +161,8 @@
 
     const makeScheduleItem = (item) => {
       const start = new Date(item.startsAt);
+      const end = item.endsAt ? new Date(item.endsAt) : null;
+      const isRange = end && formatKst(start, scheduleFormatters.date) !== formatKst(end, scheduleFormatters.date);
       const link = document.createElement('a');
       link.className = 'schedule-item';
       link.href = safeUrl(item.url);
@@ -168,16 +171,23 @@
 
       const date = document.createElement('time');
       date.dateTime = start.toISOString();
+      date.classList.toggle('is-range', Boolean(isRange));
       const day = document.createElement('b');
-      day.textContent = formatKst(start, scheduleFormatters.day);
+      day.textContent = isRange
+        ? `${formatKst(start, scheduleFormatters.day)}–${formatKst(end, scheduleFormatters.day)}`
+        : formatKst(start, scheduleFormatters.day);
       const month = document.createElement('span');
-      month.textContent = formatKst(start, scheduleFormatters.month).toUpperCase();
+      month.textContent = isRange && formatKst(start, scheduleFormatters.month) !== formatKst(end, scheduleFormatters.month)
+        ? `${formatKst(start, scheduleFormatters.month)}–${formatKst(end, scheduleFormatters.month)}`.toUpperCase()
+        : formatKst(start, scheduleFormatters.month).toUpperCase();
       date.append(day, month);
 
       const copy = document.createElement('span');
       copy.className = 'schedule-copy';
       const meta = document.createElement('small');
-      meta.textContent = `${formatKst(start, scheduleFormatters.time)} KST`;
+      meta.textContent = isRange
+        ? `${formatKst(start, scheduleFormatters.time)} — ${formatKst(end, scheduleFormatters.time)} KST`
+        : `${formatKst(start, scheduleFormatters.time)} KST`;
       const title = document.createElement('strong');
       title.textContent = item.title || 'OFFICIAL UPDATE';
       copy.append(meta, title);
@@ -216,7 +226,7 @@
           if (!response.ok) throw new Error(`Schedule request failed: ${response.status}`);
           const payload = await response.json();
           if (!Array.isArray(payload.items)) throw new Error('Invalid schedule payload');
-          renderSchedule(payload.items.filter((item) => item && Number.isFinite(Date.parse(item.startsAt))));
+          renderSchedule(payload.items.filter((item) => item && Number.isFinite(Date.parse(item.startsAt)) && (!item.endsAt || Date.parse(item.endsAt) >= Date.parse(item.startsAt))));
           const sources = Array.isArray(payload.liveSources) ? payload.liveSources : [];
           scheduleStatus.textContent = payload.live ? `LIVE · ${sources.join(' + ').toUpperCase()}` : 'UPDATED';
           scheduleUpdated.textContent = `UPDATED ${formatKst(payload.updatedAt || Date.now(), scheduleFormatters.time)} KST · 5 MIN`;
