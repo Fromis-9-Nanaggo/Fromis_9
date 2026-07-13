@@ -444,32 +444,61 @@
   const eraScroller = archiveScroller;
   if (eraScroller) {
     let dragging = false;
+    let pointerActive = false;
+    let dragged = false;
+    let suppressEraClick = false;
     let startX = 0;
     let startScroll = 0;
 
     eraScroller.addEventListener('pointerdown', (event) => {
       if (event.pointerType === 'touch') return;
-      dragging = true;
+      pointerActive = true;
+      dragging = false;
+      dragged = false;
       startX = event.clientX;
       startScroll = eraScroller.scrollLeft;
-      eraScroller.classList.add('is-dragging');
-      eraScroller.setPointerCapture(event.pointerId);
     });
     eraScroller.addEventListener('pointermove', (event) => {
-      if (!dragging) return;
-      eraScroller.scrollLeft = startScroll - (event.clientX - startX) * 1.2;
+      if (!pointerActive) return;
+      const distance = event.clientX - startX;
+      if (Math.abs(distance) <= 5) return;
+      if (!dragging) {
+        dragging = true;
+        dragged = true;
+        eraScroller.classList.add('is-dragging');
+        if (!eraScroller.hasPointerCapture(event.pointerId)) eraScroller.setPointerCapture(event.pointerId);
+      }
+      eraScroller.scrollLeft = startScroll - distance * 1.2;
     });
     const stopDrag = (event) => {
+      if (!pointerActive) return;
+      pointerActive = false;
       if (!dragging) return;
       dragging = false;
       eraScroller.classList.remove('is-dragging');
       if (event.pointerId !== undefined && eraScroller.hasPointerCapture(event.pointerId)) {
         eraScroller.releasePointerCapture(event.pointerId);
       }
+      if (dragged) {
+        suppressEraClick = true;
+        window.requestAnimationFrame(() => { suppressEraClick = false; });
+      }
     };
-    eraScroller.addEventListener('pointerup', stopDrag);
+    eraScroller.addEventListener('pointerup', (event) => {
+      const card = event.target.closest?.('.era-card[data-album-id]');
+      if (pointerActive && !dragged && card) {
+        openAlbumModal(card.dataset.albumId, { historyMode: 'push', opener: card });
+      }
+      stopDrag(event);
+    });
     eraScroller.addEventListener('pointercancel', stopDrag);
     eraScroller.addEventListener('pointerleave', stopDrag);
+    eraScroller.addEventListener('click', (event) => {
+      if (!suppressEraClick) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressEraClick = false;
+    }, true);
     eraScroller.addEventListener('keydown', (event) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
@@ -478,6 +507,191 @@
         behavior: reducedMotion ? 'auto' : 'smooth'
       });
     });
+
+    const albumModal = document.querySelector('#archive-album-dialog');
+    const albumModalPanel = document.querySelector('.album-modal-panel');
+    const albumModalClose = document.querySelector('.album-modal-close');
+    const albumModalTitle = document.querySelector('[data-album-modal-title]');
+    const albumModalMeta = document.querySelector('[data-album-modal-meta]');
+    const albumModalTitleTrack = document.querySelector('[data-album-modal-title-track]');
+    const albumModalDescription = document.querySelector('[data-album-modal-description]');
+    const albumModalTracks = document.querySelector('[data-album-modal-tracks]');
+    const albumModalVideo = document.querySelector('[data-album-modal-video]');
+    const albumModalPrevious = document.querySelector('[data-album-modal-prev]');
+    const albumModalNext = document.querySelector('[data-album-modal-next]');
+    const albums = Array.isArray(window.ARCHIVE_ALBUMS) ? window.ARCHIVE_ALBUMS : [];
+    const albumsById = new Map(albums.filter((album) => album?.id).map((album) => [album.id, album]));
+    const albumOrder = eraCards.map((card) => card.dataset.albumId).filter((id) => albumsById.has(id));
+    const typeLabels = { single: 'SINGLE ALBUM', mini: 'MINI ALBUM', album: 'FULL ALBUM' };
+    const pageRegions = [document.querySelector('header'), document.querySelector('main'), document.querySelector('footer')].filter(Boolean);
+    let activeAlbumId = '';
+    let albumOpener = null;
+    let restoreAlbumFocus = false;
+
+    const isSafeHttpsUrl = (value) => {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:' ? url.href : '';
+      } catch (_) {
+        return '';
+      }
+    };
+
+    const getAlbumIdFromHash = () => {
+      if (!window.location.hash.startsWith('#album=')) return '';
+      try {
+        return decodeURIComponent(window.location.hash.slice(7));
+      } catch (_) {
+        return '';
+      }
+    };
+
+    const formatReleaseDate = (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return '발매일 정보 확인 중';
+      const [year, month, day] = value.split('-');
+      return `${year}.${month}.${day}`;
+    };
+
+    const updateAlbumHash = (id, mode) => {
+      const url = `${window.location.pathname}${window.location.search}#album=${encodeURIComponent(id)}`;
+      const state = { archiveAlbumModal: true };
+      if (mode === 'replace') window.history.replaceState(state, '', url);
+      else if (mode === 'push') window.history.pushState(state, '', url);
+    };
+
+    const setAlbumModalBackground = (open) => {
+      document.body.classList.toggle('album-modal-open', open);
+      pageRegions.forEach((region) => { region.inert = open; });
+    };
+
+    const renderAlbum = (album) => {
+      if (!albumModalTitle || !albumModalMeta || !albumModalTitleTrack || !albumModalDescription || !albumModalTracks) return;
+      albumModalTitle.textContent = album.title || '앨범 정보 확인 중';
+      albumModalMeta.textContent = `${formatReleaseDate(album.releaseDate)} · ${typeLabels[album.type] || '앨범 유형 정보 확인 중'}`;
+      albumModalTitleTrack.textContent = album.titleTrack ? `TITLE TRACK · ${album.titleTrack}` : '대표곡 정보 확인 중';
+      albumModalDescription.textContent = album.description || '앨범 소개 정보 확인 중';
+
+      albumModalTracks.replaceChildren();
+      const tracks = Array.isArray(album.tracks) ? album.tracks : [];
+      if (tracks.length) {
+        tracks.forEach((track) => {
+          const item = document.createElement('li');
+          item.textContent = track;
+          albumModalTracks.append(item);
+        });
+      } else {
+        const item = document.createElement('li');
+        item.textContent = '수록곡 정보 확인 중';
+        albumModalTracks.append(item);
+      }
+
+      const videoUrl = isSafeHttpsUrl(album.officialVideoUrl);
+      if (albumModalVideo) {
+        albumModalVideo.hidden = !videoUrl;
+        if (videoUrl) albumModalVideo.href = videoUrl;
+        else albumModalVideo.removeAttribute('href');
+      }
+
+      const index = albumOrder.indexOf(album.id);
+      if (albumModalPrevious) albumModalPrevious.disabled = index <= 0;
+      if (albumModalNext) albumModalNext.disabled = index < 0 || index >= albumOrder.length - 1;
+    };
+
+    const closeAlbumModal = ({ returnFocus = true } = {}) => {
+      if (!albumModal || albumModal.hidden) return;
+      albumModal.hidden = true;
+      setAlbumModalBackground(false);
+      activeAlbumId = '';
+      if (returnFocus && restoreAlbumFocus && albumOpener) {
+        window.setTimeout(() => albumOpener.focus(), 0);
+      }
+      albumOpener = null;
+      restoreAlbumFocus = false;
+    };
+
+    const openAlbumModal = (id, { historyMode = 'none', opener = null, moveFocus = true } = {}) => {
+      const album = albumsById.get(id);
+      if (!album || !albumModal) return false;
+      const wasOpen = !albumModal.hidden;
+      if (!wasOpen) {
+        albumOpener = opener;
+        restoreAlbumFocus = Boolean(opener);
+      }
+      activeAlbumId = id;
+      renderAlbum(album);
+      albumModal.hidden = false;
+      setAlbumModalBackground(true);
+      if (historyMode !== 'none') updateAlbumHash(id, wasOpen ? 'replace' : historyMode);
+      if (moveFocus && !wasOpen) window.setTimeout(() => albumModalClose?.focus(), 0);
+      return true;
+    };
+
+    const requestAlbumModalClose = () => {
+      if (window.history.state?.archiveAlbumModal) {
+        window.history.back();
+        return;
+      }
+      if (getAlbumIdFromHash()) {
+        window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}#archive`);
+      }
+      closeAlbumModal();
+    };
+
+    const syncAlbumModalFromHash = () => {
+      const albumId = getAlbumIdFromHash();
+      if (albumId && albumsById.has(albumId)) {
+        if (albumId !== activeAlbumId) openAlbumModal(albumId, { moveFocus: !activeAlbumId });
+      } else {
+        closeAlbumModal();
+      }
+    };
+
+    eraCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        if (suppressEraClick) return;
+        openAlbumModal(card.dataset.albumId, { historyMode: 'push', opener: card });
+      });
+      card.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openAlbumModal(card.dataset.albumId, { historyMode: 'push', opener: card });
+      });
+    });
+
+    albumModal?.querySelectorAll('[data-album-modal-close]').forEach((button) => {
+      button.addEventListener('click', requestAlbumModalClose);
+    });
+    albumModalPrevious?.addEventListener('click', () => {
+      const index = albumOrder.indexOf(activeAlbumId);
+      if (index > 0) openAlbumModal(albumOrder[index - 1], { historyMode: 'replace', moveFocus: false });
+    });
+    albumModalNext?.addEventListener('click', () => {
+      const index = albumOrder.indexOf(activeAlbumId);
+      if (index >= 0 && index < albumOrder.length - 1) openAlbumModal(albumOrder[index + 1], { historyMode: 'replace', moveFocus: false });
+    });
+    albumModal?.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        requestAlbumModalClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = [...albumModal.querySelectorAll('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => !element.hidden && element.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+    window.addEventListener('hashchange', syncAlbumModalFromHash);
+    window.addEventListener('popstate', syncAlbumModalFromHash);
+    window.setTimeout(syncAlbumModalFromHash, 0);
   }
 
   const pointerGlow = document.querySelector('.pointer-glow');
