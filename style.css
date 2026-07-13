@@ -1678,6 +1678,13 @@ p {
 .era-card {
   flex: 0 0 clamp(255px, 25vw, 390px);
   scroll-snap-align: start;
+  color: inherit;
+  text-decoration: none;
+}
+
+.era-card:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 6px;
 }
 
 .era-art {

@@ -444,12 +444,15 @@
   const eraScroller = archiveScroller;
   if (eraScroller) {
     let dragging = false;
+    let dragged = false;
+    let suppressEraClick = false;
     let startX = 0;
     let startScroll = 0;
 
     eraScroller.addEventListener('pointerdown', (event) => {
       if (event.pointerType === 'touch') return;
       dragging = true;
+      dragged = false;
       startX = event.clientX;
       startScroll = eraScroller.scrollLeft;
       eraScroller.classList.add('is-dragging');
@@ -457,7 +460,9 @@
     });
     eraScroller.addEventListener('pointermove', (event) => {
       if (!dragging) return;
-      eraScroller.scrollLeft = startScroll - (event.clientX - startX) * 1.2;
+      const distance = event.clientX - startX;
+      if (Math.abs(distance) > 5) dragged = true;
+      eraScroller.scrollLeft = startScroll - distance * 1.2;
     });
     const stopDrag = (event) => {
       if (!dragging) return;
@@ -466,10 +471,18 @@
       if (event.pointerId !== undefined && eraScroller.hasPointerCapture(event.pointerId)) {
         eraScroller.releasePointerCapture(event.pointerId);
       }
+      if (dragged) {
+        suppressEraClick = true;
+        window.requestAnimationFrame(() => { suppressEraClick = false; });
+      }
     };
     eraScroller.addEventListener('pointerup', stopDrag);
     eraScroller.addEventListener('pointercancel', stopDrag);
     eraScroller.addEventListener('pointerleave', stopDrag);
+    eraScroller.addEventListener('click', (event) => {
+      if (!suppressEraClick) return;
+      event.preventDefault();
+    }, true);
     eraScroller.addEventListener('keydown', (event) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
