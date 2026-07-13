@@ -305,35 +305,35 @@
             <p class="archive-result" data-archive-result aria-live="polite">8개의 기록</p>
           </div>
 
-          <article class="era-card era-2017" data-era-year="2017" data-era-type="single" data-era-search="glass shoes pre-debut single">
+          <article class="era-card era-2017" data-album-id="glass-shoes" data-era-year="2017" data-era-type="single" data-era-search="glass shoes pre-debut single" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="Glass Shoes 앨범 상세 보기">
             <div class="era-art"><span>01</span><i>◇</i></div>
             <div class="era-copy"><span>2017</span><h3>Glass Shoes</h3><p>PRE-DEBUT SINGLE</p></div>
           </article>
-          <article class="era-card era-2018" data-era-year="2018" data-era-type="mini" data-era-search="to. heart 1st mini album">
+          <article class="era-card era-2018" data-album-id="to-heart" data-era-year="2018" data-era-type="mini" data-era-search="to. heart 1st mini album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="To. Heart 앨범 상세 보기">
             <div class="era-art"><span>02</span><i>♡</i></div>
             <div class="era-copy"><span>2018</span><h3>To. Heart</h3><p>1ST MINI ALBUM</p></div>
           </article>
-          <article class="era-card era-2021" data-era-year="2021" data-era-type="single" data-era-search="we go 9 way ticket single album">
+          <article class="era-card era-2021" data-album-id="9-way-ticket" data-era-year="2021" data-era-type="single" data-era-search="we go 9 way ticket single album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="9 WAY TICKET 앨범 상세 보기">
             <div class="era-art"><span>03</span><i>↗</i></div>
             <div class="era-copy"><span>2021</span><h3>WE GO</h3><p>9 WAY TICKET</p></div>
           </article>
-          <article class="era-card era-2022" data-era-year="2022" data-era-type="mini" data-era-search="dm midnight guest mini album">
+          <article class="era-card era-2022" data-album-id="midnight-guest" data-era-year="2022" data-era-type="mini" data-era-search="dm midnight guest mini album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="Midnight Guest 앨범 상세 보기">
             <div class="era-art"><span>04</span><i>☾</i></div>
             <div class="era-copy"><span>2022</span><h3>DM</h3><p>MIDNIGHT GUEST</p></div>
           </article>
-          <article class="era-card era-2023" data-era-year="2023" data-era-type="album" data-era-search="#menow unlock my world studio album">
+          <article class="era-card era-2023" data-album-id="unlock-my-world" data-era-year="2023" data-era-type="album" data-era-search="#menow unlock my world studio album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="Unlock My World 앨범 상세 보기">
             <div class="era-art"><span>05</span><i>#</i></div>
             <div class="era-copy"><span>2023</span><h3>#menow</h3><p>UNLOCK MY WORLD</p></div>
           </article>
-          <article class="era-card era-2024" data-era-year="2024" data-era-type="single" data-era-search="supersonic 3rd single album">
+          <article class="era-card era-2024" data-album-id="supersonic" data-era-year="2024" data-era-type="single" data-era-search="supersonic 3rd single album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="Supersonic 앨범 상세 보기">
             <div class="era-art"><span>06</span><i>⚡</i></div>
             <div class="era-copy"><span>2024</span><h3>Supersonic</h3><p>3RD SINGLE ALBUM</p></div>
           </article>
-          <article class="era-card era-2025" data-era-year="2025" data-era-type="single" data-era-search="like you better from our 20's single album">
+          <article class="era-card era-2025" data-album-id="from-our-20s" data-era-year="2025" data-era-type="single" data-era-search="like you better from our 20's single album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="From Our 20's 앨범 상세 보기">
             <div class="era-art"><span>07</span><i>☀</i></div>
             <div class="era-copy"><span>2025</span><h3>LIKE YOU BETTER</h3><p>FROM OUR 20'S</p></div>
           </article>
-          <article class="era-card era-2026" data-era-year="2026" data-era-type="album" data-era-search="glow me the 2nd album">
+          <article class="era-card era-2026" data-album-id="glow-me" data-era-year="2026" data-era-type="album" data-era-search="glow me the 2nd album" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="archive-album-dialog" aria-label="Glow ME 앨범 상세 보기">
             <div class="era-art"><span>08</span><i>✣</i></div>
             <div class="era-copy"><span>2026</span><h3>Glow ME</h3><p>THE 2ND ALBUM</p></div>
           </article>
@@ -422,6 +422,34 @@
     </section>
   </main>
 
+  <div class="album-modal" id="archive-album-dialog" role="dialog" aria-modal="true" aria-labelledby="album-modal-title" aria-describedby="album-modal-description" hidden>
+    <div class="album-modal-backdrop" data-album-modal-close aria-hidden="true"></div>
+    <section class="album-modal-panel" tabindex="-1">
+      <div class="album-modal-head">
+        <p data-album-modal-kicker>ARCHIVE DETAIL</p>
+        <button class="album-modal-close" type="button" data-album-modal-close aria-label="앨범 상세 닫기">×</button>
+      </div>
+      <div class="album-modal-body">
+        <p class="album-modal-meta" data-album-modal-meta></p>
+        <h2 id="album-modal-title" data-album-modal-title></h2>
+        <p class="album-modal-title-track" data-album-modal-title-track></p>
+        <p class="album-modal-description" id="album-modal-description" data-album-modal-description></p>
+        <a class="album-modal-video" data-album-modal-video target="_blank" rel="noreferrer" hidden>공식 영상 보기 <span aria-hidden="true">↗</span></a>
+        <section class="album-modal-tracks" aria-labelledby="album-modal-tracks-title">
+          <div class="album-modal-section-head">
+            <p>TRACKLIST</p>
+            <h3 id="album-modal-tracks-title">수록곡</h3>
+          </div>
+          <ol data-album-modal-tracks></ol>
+        </section>
+      </div>
+      <nav class="album-modal-nav" aria-label="아카이브 앨범 이동">
+        <button type="button" data-album-modal-prev>← <span>이전 앨범</span></button>
+        <button type="button" data-album-modal-next><span>다음 앨범</span> →</button>
+      </nav>
+    </section>
+  </div>
+
   <footer class="site-footer">
     <div class="footer-wordmark" aria-hidden="true">fromis_9</div>
     <div class="footer-bottom">
@@ -431,6 +459,7 @@
     </div>
   </footer>
 
+  <script src="archive-records.js"></script>
   <script src="app.js" defer></script>
 </body>
 </html>
