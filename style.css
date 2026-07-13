@@ -284,8 +284,15 @@ p {
   transform-origin: left;
 }
 
-.header-official {
+.header-links {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-official,
+.header-creator {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -295,7 +302,8 @@ p {
   transition: color .25s, background .25s, border-color .25s;
 }
 
-.header-official:hover {
+.header-official:hover,
+.header-creator:hover {
   color: var(--ink);
   border-color: var(--lime);
   background: var(--lime);
@@ -2538,7 +2546,7 @@ p {
   }
 
   .desktop-nav,
-  .header-official,
+  .header-links,
   .latest-video-card {
     display: none;
   }
