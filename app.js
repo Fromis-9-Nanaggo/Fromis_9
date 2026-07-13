@@ -302,16 +302,15 @@
   const latestVideoTitle = document.querySelector('[data-latest-video-title]');
   const latestVideoLink = document.querySelector('[data-latest-video-link]');
   const latestVideoFallback = document.querySelector('[data-latest-video-fallback]');
-  const desktopVideoQuery = window.matchMedia('(min-width: 821px) and (pointer: fine)');
   let latestVideoRequested = false;
 
   const loadLatestVideo = async () => {
-    if (!latestVideoCard || latestVideoRequested || !desktopVideoQuery.matches) return;
+    if (!latestVideoCard || latestVideoRequested) return;
     latestVideoRequested = true;
+    latestVideoCard.setAttribute('aria-busy', 'true');
     try {
       const response = await fetch('/api/latest-video', {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store'
+        headers: { Accept: 'application/json' }
       });
       if (!response.ok) throw new Error(`Latest video request failed: ${response.status}`);
       const video = await response.json();
@@ -338,9 +337,10 @@
   };
 
   if (latestVideoCard) {
-    loadLatestVideo();
-    desktopVideoQuery.addEventListener?.('change', (event) => {
-      if (event.matches) loadLatestVideo();
+    latestVideoFallback?.addEventListener('click', (event) => {
+      if (latestVideoRequested) return;
+      event.preventDefault();
+      loadLatestVideo();
     });
   }
 
@@ -789,6 +789,7 @@
     let count = 0;
     let todayCount = 0;
     let serverCount = null;
+    let globalCountRequested = false;
     let frame = 0;
     let animationFrame = null;
     let resizeFrame = null;
@@ -807,6 +808,8 @@
     updateCount();
 
     const readGlobalCount = async () => {
+      if (globalCountRequested) return;
+      globalCountRequested = true;
       try {
         const response = await fetch(lightsEndpoint, { headers: { Accept: 'application/json' } });
         if (!response.ok) throw new Error('Unable to read the shared light count.');
@@ -818,6 +821,7 @@
         todayCount = Number.parseInt(data.today, 10) || 0;
         updateCount();
       } catch (_) {
+        globalCountRequested = false;
         // D1 바인딩 전에는 기존 기기별 카운트를 안전한 대체값으로 사용한다.
       }
     };
@@ -843,10 +847,8 @@
       }
     };
 
-    readGlobalCount();
-
     const makeStars = () => {
-      const total = Math.round(clamp((width * height) / (coarsePointer ? 22000 : 13000), coarsePointer ? 28 : 45, coarsePointer ? 72 : 135));
+      const total = Math.round(clamp((width * height) / (coarsePointer ? 30000 : 20000), coarsePointer ? 20 : 32, coarsePointer ? 48 : 82));
       stars = Array.from({ length: total }, (_, index) => ({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -874,7 +876,7 @@
       const rect = canvasWrap.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
-      ratio = clamp(window.devicePixelRatio || 1, 1, coarsePointer ? 1 : 1.5);
+      ratio = clamp(window.devicePixelRatio || 1, 1, coarsePointer ? 1 : 1.25);
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       canvas.style.width = `${width}px`;
@@ -893,7 +895,7 @@
       context.translate(bloom.x, bloom.y);
       context.rotate(bloom.rotation + bloom.age * .08);
       context.globalAlpha = fade;
-      context.shadowBlur = 22;
+      context.shadowBlur = 14;
       context.shadowColor = bloom.color;
       context.fillStyle = bloom.color;
 
@@ -938,8 +940,13 @@
       if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
       animationFrame = null;
     };
-    const animate = () => {
-      draw();
+    let lastDrawTime = 0;
+    const frameInterval = 1000 / (coarsePointer ? 24 : 30);
+    const animate = (timestamp) => {
+      if (timestamp - lastDrawTime >= frameInterval) {
+        draw();
+        lastDrawTime = timestamp;
+      }
       animationFrame = shouldAnimate() ? window.requestAnimationFrame(animate) : null;
     };
     const startAnimation = () => {
@@ -1004,6 +1011,7 @@
       new IntersectionObserver((entries) => {
         canvasVisible = entries.some((entry) => entry.isIntersecting);
         if (canvasVisible) {
+          readGlobalCount();
           if (reducedMotion) draw();
           else startAnimation();
         } else {
