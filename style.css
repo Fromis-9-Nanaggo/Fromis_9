@@ -2421,7 +2421,7 @@ p {
 
 .footer-bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 30px;
   align-items: end;
   margin-top: clamp(60px, 8vw, 110px);
@@ -2435,6 +2435,27 @@ p {
 
 .footer-bottom p:nth-child(2) {
   opacity: .65;
+}
+
+.footer-visitors {
+  display: flex;
+  gap: 18px;
+  white-space: nowrap;
+}
+
+.footer-visitors span {
+  display: grid;
+  gap: 2px;
+  color: rgba(6, 17, 34, .65);
+}
+
+.footer-visitors strong {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1;
 }
 
 .footer-bottom a {
@@ -2859,7 +2880,12 @@ p {
 
   .footer-bottom a {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 3;
+  }
+
+  .footer-visitors {
+    grid-column: 1;
+    grid-row: 3;
   }
 }
 

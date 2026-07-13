@@ -6,6 +6,47 @@
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
   const pad = (value) => String(value).padStart(2, '0');
 
+  const totalVisitorCount = document.querySelector('[data-total-visitor-count]');
+  const todayVisitorCount = document.querySelector('[data-today-visitor-count]');
+  if (totalVisitorCount && todayVisitorCount) {
+    const visitorStorageKey = 'fromis9-visitor-id';
+    const visitorsEndpoint = '/api/visitors';
+    let visitorId = '';
+
+    try {
+      visitorId = window.localStorage.getItem(visitorStorageKey) || '';
+      if (!/^[a-f0-9-]{36}$/i.test(visitorId)) {
+        visitorId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        window.localStorage.setItem(visitorStorageKey, visitorId);
+      }
+    } catch (_) {
+      visitorId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    fetch(visitorsEndpoint, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ visitorId })
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Unable to read visitor counts.');
+        return response.json();
+      })
+      .then((data) => {
+        const total = Number.parseInt(data.total, 10);
+        const today = Number.parseInt(data.today, 10);
+        if (Number.isFinite(total)) totalVisitorCount.textContent = total.toLocaleString('ko-KR');
+        if (Number.isFinite(today)) todayVisitorCount.textContent = today.toLocaleString('ko-KR');
+      })
+      .catch(() => {
+        totalVisitorCount.textContent = '—';
+        todayVisitorCount.textContent = '—';
+      });
+  }
+
   const loader = document.querySelector('.loader');
   const hideLoader = () => {
     window.setTimeout(() => loader?.classList.add('is-hidden'), reducedMotion ? 0 : 520);
