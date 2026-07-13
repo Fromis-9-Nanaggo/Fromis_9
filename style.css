@@ -779,6 +779,7 @@ p {
     linear-gradient(135deg, rgba(29, 77, 255, .7), rgba(3, 9, 22, .95));
 }
 
+.latest-video-thumbnail,
 .latest-video-media iframe,
 .latest-video-fallback {
   position: absolute;
@@ -788,7 +789,22 @@ p {
   border: 0;
 }
 
+.latest-video-thumbnail {
+  z-index: 0;
+  object-fit: cover;
+}
+
+.latest-video-media iframe {
+  z-index: 1;
+  visibility: hidden;
+}
+
+.latest-video-card.is-ready .latest-video-media iframe {
+  visibility: visible;
+}
+
 .latest-video-fallback {
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

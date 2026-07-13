@@ -302,13 +302,17 @@
   const latestVideoTitle = document.querySelector('[data-latest-video-title]');
   const latestVideoLink = document.querySelector('[data-latest-video-link]');
   const latestVideoFallback = document.querySelector('[data-latest-video-fallback]');
-  let latestVideoRequested = false;
+  const latestVideoThumbnail = document.querySelector('[data-latest-video-thumbnail]');
+  let latestVideo = null;
+  let latestVideoRequest = null;
 
-  const loadLatestVideo = async () => {
-    if (!latestVideoCard || latestVideoRequested) return;
-    latestVideoRequested = true;
+  const requestLatestVideo = async () => {
+    if (!latestVideoCard) return null;
+    if (latestVideo) return latestVideo;
+    if (latestVideoRequest) return latestVideoRequest;
     latestVideoCard.setAttribute('aria-busy', 'true');
-    try {
+    latestVideoRequest = (async () => {
+      try {
       const response = await fetch('/api/latest-video', {
         headers: { Accept: 'application/json' }
       });
@@ -316,32 +320,41 @@
       const video = await response.json();
       if (!/^[\w-]{11}$/.test(video.id || '')) throw new Error('Invalid latest video payload');
 
+      latestVideo = video;
       const watchUrl = `https://www.youtube.com/watch?v=${video.id}`;
       if (latestVideoLink) latestVideoLink.href = watchUrl;
       if (latestVideoTitle) latestVideoTitle.textContent = video.title || 'LATEST VIDEO FROM THE OFFICIAL CHANNEL.';
-      if (latestVideoFallback) latestVideoFallback.textContent = video.title || 'WATCH ON YOUTUBE';
-      if (latestVideoFrame) {
-        latestVideoFrame.addEventListener('load', () => latestVideoCard.classList.add('is-ready'), { once: true });
-        latestVideoFrame.src = `https://www.youtube-nocookie.com/embed/${video.id}?rel=0&modestbranding=1`;
-      } else {
-        latestVideoCard.classList.add('is-ready');
-      }
-    } catch (error) {
+      if (latestVideoFallback) latestVideoFallback.textContent = video.title || 'CLICK TO LOAD VIDEO';
+      if (latestVideoThumbnail) latestVideoThumbnail.src = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+      return video;
+      } catch (error) {
       console.warn('Could not load the latest YouTube video', error);
       if (latestVideoTitle) latestVideoTitle.textContent = 'OPEN THE OFFICIAL CHANNEL FOR THE LATEST VIDEO.';
       if (latestVideoFallback) latestVideoFallback.textContent = 'OPEN OFFICIAL CHANNEL';
       latestVideoCard.classList.add('is-unavailable');
+      return null;
     } finally {
       latestVideoCard.setAttribute('aria-busy', 'false');
     }
+    })();
+    return latestVideoRequest;
+  };
+
+  const loadLatestVideo = async () => {
+    const video = await requestLatestVideo();
+    if (!video || !latestVideoFrame || latestVideoFrame.getAttribute('src')) return;
+    latestVideoFrame.addEventListener('load', () => latestVideoCard.classList.add('is-ready'), { once: true });
+    latestVideoFrame.src = `https://www.youtube-nocookie.com/embed/${video.id}?rel=0&modestbranding=1`;
   };
 
   if (latestVideoCard) {
     latestVideoFallback?.addEventListener('click', (event) => {
-      if (latestVideoRequested) return;
+      if (latestVideoCard.classList.contains('is-unavailable')) return;
       event.preventDefault();
       loadLatestVideo();
     });
+    const queuePreview = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 800));
+    queuePreview(() => { requestLatestVideo(); });
   }
 
   const trackItems = [...document.querySelectorAll('.track-list li')];
