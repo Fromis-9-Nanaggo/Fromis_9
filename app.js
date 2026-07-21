@@ -158,7 +158,7 @@
       if (distance <= 0) {
         countdownCard.classList.add('is-released');
         countdownCard.querySelector('.countdown-head span').textContent = 'THE 2ND ALBUM';
-        countdownCard.querySelector(':scope > p').textContent = 'OUT NOW · OFFICIAL CHANNEL';
+        countdownCard.querySelector(':scope > p').textContent = 'OUT NOW · 10 TRACKS';
         if (countdownTimer) window.clearInterval(countdownTimer);
         return;
       }
@@ -365,24 +365,22 @@
   const trackVideoLink = document.querySelector('[data-track-video-link]');
   const trackVideoLabel = document.querySelector('[data-track-video-label]');
 
-  const updateTrackRecommendation = (track, note) => {
-    const query = `fromis_9 ${track} official`;
-    const isTitle = note === 'TITLE TRACK';
-    const isUnit = note === 'UNIT';
+  const updateTrackRecommendation = (track, linkUrl, linkType) => {
+    const isMusicVideo = linkType === 'mv';
 
     if (trackVideoKind) {
-      trackVideoKind.textContent = isTitle ? 'TITLE VIDEO' : isUnit ? 'UNIT PICK' : 'OFFICIAL SEARCH';
+      trackVideoKind.textContent = isMusicVideo ? 'OFFICIAL MV' : 'OFFICIAL AUDIO';
     }
     if (trackVideoCopy) {
       trackVideoCopy.replaceChildren();
       const title = document.createElement('strong');
       title.textContent = track;
       trackVideoCopy.append(title, document.createTextNode(
-        isTitle ? '의 공식 뮤직비디오와 무대를 바로 찾아봐.' : isUnit ? ' 유닛의 공식 콘텐츠와 라이브를 찾아봐.' : '의 공식 영상과 무대를 바로 찾아봐.'
+        isMusicVideo ? '의 공식 뮤직비디오를 바로 볼 수 있어.' : '의 공식 음원을 바로 들을 수 있어.'
       ));
     }
-    if (trackVideoLink) trackVideoLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-    if (trackVideoLabel) trackVideoLabel.textContent = `${track.toUpperCase()} 영상 찾기`;
+    if (trackVideoLink) trackVideoLink.href = linkUrl || 'https://www.youtube.com/@fromis9_official';
+    if (trackVideoLabel) trackVideoLabel.textContent = `${track.toUpperCase()} ${isMusicVideo ? 'MV 보기' : '듣기'}`;
   };
 
   trackItems.forEach((item) => {
@@ -392,7 +390,7 @@
       item.classList.add('active');
       if (selectedTrack) selectedTrack.textContent = button.dataset.track;
       if (selectedNote) selectedNote.textContent = button.dataset.note;
-      updateTrackRecommendation(button.dataset.track || '', button.dataset.note || '');
+      updateTrackRecommendation(button.dataset.track || '', button.dataset.trackUrl || '', button.dataset.trackLinkType || 'audio');
       button.animate?.([
         { transform: 'translateX(-5px)' },
         { transform: 'translateX(0)' }

@@ -96,11 +96,11 @@ window.ARCHIVE_ALBUMS = Object.freeze([
     type: 'album',
     title: 'Glow ME',
     displayTitle: 'Glow ME',
-    releaseDate: '',
-    titleTrack: '',
-    tracks: [],
-    description: '',
-    officialVideoUrl: '',
-    sources: []
+    releaseDate: '2026-07-21',
+    titleTrack: 'Vitamin ME',
+    tracks: ['ETERNAL', 'Vitamin ME', 'Pocket Treat', 'Blue Heart', 'Screen Time', 'Teacher', 'Cold Blood (CHAEYOUNG X NAGYUNG X JIHEON)', 'Why do I cry? (HAYOUNG X JIWON)', 'Day 1', 'Wonderland'],
+    description: '프로미스나인의 두 번째 정규 앨범. 타이틀곡 ‘Vitamin ME’를 포함한 열 곡으로 한여름의 선명한 에너지와 다섯 멤버의 새로운 색을 담았다.',
+    officialVideoUrl: 'https://www.youtube.com/watch?v=sLk8zWUuYTA',
+    sources: ['https://music.youtube.com/playlist?list=OLAK5uy_mhn9rcJzA-k_4eUJ-vW64Th1JWLFJSfbo', 'https://www.youtube.com/watch?v=sLk8zWUuYTA']
   }
 ]);

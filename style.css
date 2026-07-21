@@ -1158,9 +1158,35 @@ p {
   font-style: normal;
 }
 
+.album-stream-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid currentColor;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  transition: color .2s ease, gap .2s var(--ease);
+}
+
+.album-stream-link i {
+  color: var(--blue);
+  font-size: 15px;
+  font-style: normal;
+}
+
+.album-stream-link:hover,
+.album-stream-link:focus-visible {
+  gap: 16px;
+  color: var(--blue);
+}
+
 .track-list {
   padding: 0;
-  margin: clamp(38px, 5vw, 68px) 0 0;
+  margin: clamp(30px, 4vw, 52px) 0 0;
   border-top: 1px solid var(--line-dark);
   list-style: none;
 }
